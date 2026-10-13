@@ -2,7 +2,7 @@
 
 `llama-cpp-python` incluye un servidor propio (`llama_cpp.server`) que expone
 una API HTTP compatible con OpenAI sobre el mismo modelo GGUF que usamos en
-[01_inferencia_local.py](01_inferencia_local.py).
+[01_local_inference.py](01_local_inference.py).
 
 ¿Por qué importa esto? Muchas aplicaciones y librerías ya saben "hablar" con la
 API de OpenAI. Si nuestro servidor local imita esa API, podemos cambiar un
@@ -32,7 +32,7 @@ Debería devolver una lista JSON con el modelo cargado.
 Con el servidor todavía corriendo, en una segunda terminal:
 
 ```bash
-uv run python examples/02_cliente_api.py
+uv run python examples/03_api_client.py
 ```
 
 Este script usa el SDK de `openai` apuntando a `http://127.0.0.1:8080/v1` para

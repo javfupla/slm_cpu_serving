@@ -4,7 +4,7 @@ Una tienda online quiere clasificar automáticamente las reseñas de sus cliente
 como **positiva**, **negativa** o **neutral**, usando solo CPU y sin pagar por
 una API externa. Tu misión: conseguirlo con el modelo local.
 
-[04_challenge.py](04_challenge.py) envía 20 reseñas al servidor de la Fase 2,
+[07_challenge.py](07_challenge.py) envía 20 reseñas al servidor de la Fase 2,
 compara cada respuesta con la etiqueta correcta y mide cuánto tarda.
 
 ## Objetivo
@@ -18,12 +18,12 @@ potente será más fácil: prueba a levantar el servidor con `--n_threads 2` o
 
 ## Cómo empezar
 
-1. Levanta el servidor como en [02_servidor.md](02_servidor.md) y déjalo
+1. Levanta el servidor como en [02_start_server.md](02_start_server.md) y déjalo
    corriendo en su terminal.
 2. En otra terminal, ejecuta el challenge con la configuración inicial:
 
    ```bash
-   uv run python examples/04_challenge.py
+   uv run python examples/07_challenge.py
    ```
 
    La configuración inicial **no cumple el objetivo** (y puede tardar un par
@@ -33,7 +33,7 @@ potente será más fácil: prueba a levantar el servidor con `--n_threads 2` o
 
 ## Qué puedes cambiar
 
-- En [04_challenge.py](04_challenge.py), la sección **CONFIGURACIÓN**:
+- En [07_challenge.py](07_challenge.py), la sección **CONFIGURACIÓN**:
   - `SYSTEM_PROMPT`: instrucciones generales para el modelo.
   - `PROMPT_TEMPLATE`: cómo se le presenta cada reseña.
   - `MAX_TOKENS`: cuántos tokens puede generar como máximo.

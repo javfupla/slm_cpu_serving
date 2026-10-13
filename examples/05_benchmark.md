@@ -1,6 +1,6 @@
 # Fase 3: ejercicio de benchmarking
 
-[examples/03_benchmark.py](03_benchmark.py) recorre combinaciones de cantidad
+[examples/04_benchmark.py](04_benchmark.py) recorre combinaciones de cantidad
 de hilos, tamaños de contexto y archivos de modelo, y escribe una fila de CSV
 por cada combinación. Los estudiantes pueden analizar los compromisos
 (*trade-offs*) variando:
@@ -14,7 +14,7 @@ por cada combinación. Los estudiantes pueden analizar los compromisos
 ## Ejecutar un barrido
 
 ```bash
-uv run python examples/03_benchmark.py --model-path models/qwen2.5-1.5b-instruct-q4_k_m.gguf models/qwen2.5-3b-instruct-q4_k_m.gguf --n-threads 1 2 4 --n-ctx 512 2048 --max-tokens 64 --output benchmark_results.csv
+uv run python examples/04_benchmark.py --model-path models/qwen2.5-1.5b-instruct-q4_k_m.gguf models/qwen2.5-3b-instruct-q4_k_m.gguf --n-threads 1 2 4 --n-ctx 512 2048 --max-tokens 64 --output benchmark_results.csv
 ```
 
 Cada combinación se ejecuta una vez por defecto; usa `--repeats 3` para

@@ -1,2 +1,2 @@
 def main() -> None:
-    print("¡Hola desde slm-cpu-serving!")
+    print("Hello from slm-cpu-serving!")

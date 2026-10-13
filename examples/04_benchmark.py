@@ -1,7 +1,7 @@
-"""Benchmarking de la Fase 3: recorre cantidades de hilos, tamaños de contexto y modelos.
+"""Phase 3 benchmarking: sweep thread counts, context sizes, and model files.
 
-Escribe una fila de CSV por cada combinación (model, n_threads, n_ctx) para que
-los resultados sean fáciles de llevar a una hoja de cálculo o discutir en clase.
+Writes one CSV row per (model, n_threads, n_ctx) combination so results are
+easy to drop into a spreadsheet or discuss in class.
 """
 
 import argparse
@@ -12,7 +12,7 @@ from pathlib import Path
 
 from slm_cpu_serving.metrics import run_inference
 
-DEFAULT_PROMPT = "Explica qué es un modelo de lenguaje pequeño en dos oraciones."
+DEFAULT_PROMPT = "Explain what a small language model is in two sentences."
 
 CSV_FIELDS = [
     "model",
@@ -30,44 +30,44 @@ CSV_FIELDS = [
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Mide la inferencia variando cantidad de hilos, tamaños de contexto y modelos."
+        description="Benchmark inference across thread counts, context sizes, and models."
     )
     parser.add_argument(
         "--model-path",
         nargs="+",
         required=True,
-        help="Uno o más archivos GGUF a medir (p. ej. distintos tamaños/niveles de cuantización).",
+        help="One or more GGUF model files to benchmark (e.g. different sizes/quant levels).",
     )
     parser.add_argument(
         "--n-threads",
         type=int,
         nargs="+",
         default=[os.cpu_count()],
-        help="Cantidades de hilos a probar.",
+        help="Thread counts to sweep.",
     )
     parser.add_argument(
         "--n-ctx",
         type=int,
         nargs="+",
         default=[2048],
-        help="Tamaños de ventana de contexto a probar.",
+        help="Context window sizes to sweep.",
     )
     parser.add_argument(
-        "--prompt", default=DEFAULT_PROMPT, help="Prompt que se enviará al modelo."
+        "--prompt", default=DEFAULT_PROMPT, help="Prompt to send to the model."
     )
     parser.add_argument(
         "--max-tokens",
         type=int,
         default=128,
-        help="Máximo de tokens a generar por ejecución.",
+        help="Maximum tokens to generate per run.",
     )
     parser.add_argument(
-        "--repeats", type=int, default=1, help="Número de repeticiones por combinación."
+        "--repeats", type=int, default=1, help="Number of repeats per combination."
     )
     parser.add_argument(
         "--output",
         default="benchmark_results.csv",
-        help="Ruta donde escribir el CSV de resultados.",
+        help="Path to write the CSV results.",
     )
     return parser.parse_args()
 
@@ -77,7 +77,7 @@ def main() -> None:
 
     for model_path in args.model_path:
         if not Path(model_path).is_file():
-            print(f"Error: no se encontró el archivo del modelo: {model_path}", file=sys.stderr)
+            print(f"Error: model file not found: {model_path}", file=sys.stderr)
             sys.exit(1)
 
     combinations = [
@@ -88,7 +88,7 @@ def main() -> None:
         for _ in range(args.repeats)
     ]
 
-    print(f"Ejecutando {len(combinations)} combinación(es) de benchmark...")
+    print(f"Running {len(combinations)} benchmark combination(s)...")
 
     with open(args.output, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=CSV_FIELDS)
@@ -130,7 +130,7 @@ def main() -> None:
             )
             f.flush()
 
-    print(f"\nResultados guardados en {args.output}")
+    print(f"\nResults written to {args.output}")
 
 
 if __name__ == "__main__":

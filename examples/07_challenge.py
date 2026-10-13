@@ -1,7 +1,7 @@
-"""Challenge: clasifica reseñas con el servidor local en menos de 3 segundos por petición.
+"""Challenge: classify reviews with the local server in under 3 seconds per request.
 
-Modifica la sección CONFIGURACIÓN (y los parámetros con los que levantas el
-servidor) hasta cumplir el objetivo. No cambies las reseñas ni la evaluación.
+Edit the CONFIGURATION section (and the parameters you start the server with)
+until you reach the goal. Do not change the reviews or the evaluation.
 """
 
 import argparse
@@ -13,28 +13,29 @@ import unicodedata
 from openai import OpenAI
 
 # ---------------------------------------------------------------------------
-# CONFIGURACIÓN: esto es lo que puedes cambiar
+# CONFIGURATION: this is what you can change
 # ---------------------------------------------------------------------------
 
-# Mensaje de sistema con instrucciones para el modelo (o None para no usarlo).
+# System message with instructions for the model (or None to skip it).
 SYSTEM_PROMPT = None
 
-# Prompt que se envía por cada reseña. {review} se sustituye por el texto.
+# Prompt sent for each review. {review} is replaced with the review text.
 PROMPT_TEMPLATE = "¿Qué opinas de esta reseña?\n\n{review}"
 
-# Máximo de tokens que puede generar el modelo por respuesta.
+# Maximum number of tokens the model may generate per response.
 MAX_TOKENS = 50
 
-# Aleatoriedad de la respuesta (0 = siempre la misma respuesta).
+# Randomness of the response (0 = always the same response).
 TEMPERATURE = 0
 
 # ---------------------------------------------------------------------------
-# A partir de aquí no hace falta tocar nada
+# Nothing below this line needs to be changed
 # ---------------------------------------------------------------------------
 
 LATENCY_GOAL_S = 3.0
 ACCURACY_GOAL = 0.9
 
+# Reviews are in Spanish, with their expected labels (positiva/negativa/neutral).
 REVIEWS = [
     ("El envío llegó en dos días y el producto funciona perfecto. Lo recomiendo.", "positiva"),
     ("La batería no dura ni medio día. Una decepción total, no lo volvería a comprar.", "negativa"),
@@ -64,18 +65,18 @@ LABELS = {"positiv": "positiva", "negativ": "negativa", "neutr": "neutral"}
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Challenge: clasifica reseñas con el servidor local en menos de 3 s por petición."
+        description="Challenge: classify reviews with the local server in under 3 s per request."
     )
     parser.add_argument(
         "--base-url",
         default=os.environ.get("LLM_BASE_URL", "http://127.0.0.1:8080/v1"),
-        help="URL base del servidor compatible con OpenAI.",
+        help="Base URL of the OpenAI-compatible server.",
     )
     return parser.parse_args()
 
 
 def extract_label(text: str) -> str | None:
-    """Devuelve la primera etiqueta (positiva/negativa/neutral) que aparece en la respuesta."""
+    """Return the first label (positiva/negativa/neutral) found in the response."""
     normalized = unicodedata.normalize("NFKD", text.lower())
     normalized = "".join(c for c in normalized if not unicodedata.combining(c))
     match = LABEL_PATTERN.search(normalized)
@@ -93,19 +94,19 @@ def build_messages(review: str) -> list[dict[str, str]]:
 def main() -> None:
     args = parse_args()
 
-    # El servidor local no comprueba la API key, pero el SDK de openai exige
-    # pasar una, así que usamos un valor cualquiera.
+    # The local server does not check the API key, but the openai SDK requires
+    # one, so any value will do.
     client = OpenAI(base_url=args.base_url, api_key="dummy")
 
-    print(f"Servidor: {args.base_url}")
-    print(f"Clasificando {len(REVIEWS)} reseñas...\n")
+    print(f"Server: {args.base_url}")
+    print(f"Classifying {len(REVIEWS)} reviews...\n")
 
     hits = 0
     times = []
     for i, (review, expected) in enumerate(REVIEWS, start=1):
         start = time.perf_counter()
         response = client.chat.completions.create(
-            model="local-model",  # el servidor solo tiene un modelo cargado; el nombre no importa
+            model="local-model",  # the server only has one model loaded; the name does not matter
             messages=build_messages(review),
             max_tokens=MAX_TOKENS,
             temperature=TEMPERATURE,
@@ -122,26 +123,26 @@ def main() -> None:
         if len(summary) > 60:
             summary = summary[:57] + "..."
         print(
-            f"[{i:2}] {'OK   ' if hit else 'FALLO'} esperado={expected:<8} "
-            f"obtenido={predicted or '?':<8} {elapsed:5.2f}s  {summary!r}"
+            f"[{i:2}] {'OK  ' if hit else 'FAIL'} expected={expected:<8} "
+            f"got={predicted or '?':<8} {elapsed:5.2f}s  {summary!r}"
         )
 
     accuracy = hits / len(REVIEWS)
     mean_time = sum(times) / len(times)
 
-    print("\n--- Resultado ---")
-    print(f"Aciertos:     {hits}/{len(REVIEWS)} ({accuracy:.0%})")
-    print(f"Tiempo medio: {mean_time:.2f}s")
-    print(f"Tiempo máx.:  {max(times):.2f}s")
+    print("\n--- Result ---")
+    print(f"Correct:   {hits}/{len(REVIEWS)} ({accuracy:.0%})")
+    print(f"Mean time: {mean_time:.2f}s")
+    print(f"Max time:  {max(times):.2f}s")
 
     accuracy_ok = accuracy >= ACCURACY_GOAL
     latency_ok = mean_time < LATENCY_GOAL_S
     print(
-        f"\nObjetivo: aciertos >= {ACCURACY_GOAL:.0%} {'✅' if accuracy_ok else '❌'}  |  "
-        f"tiempo medio < {LATENCY_GOAL_S:.0f}s {'✅' if latency_ok else '❌'}"
+        f"\nGoal: accuracy >= {ACCURACY_GOAL:.0%} {'✅' if accuracy_ok else '❌'}  |  "
+        f"mean time < {LATENCY_GOAL_S:.0f}s {'✅' if latency_ok else '❌'}"
     )
     if accuracy_ok and latency_ok:
-        print("¡Challenge superado!")
+        print("Challenge completed!")
 
 
 if __name__ == "__main__":
