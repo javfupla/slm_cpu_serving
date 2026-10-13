@@ -14,7 +14,7 @@ por cada combinación. Los estudiantes pueden analizar los compromisos
 ## Ejecutar un barrido
 
 ```bash
-uv run python examples/04_benchmark.py --model-path models/qwen2.5-1.5b-instruct-q4_k_m.gguf models/qwen2.5-3b-instruct-q4_k_m.gguf --n-threads 1 2 4 --n-ctx 512 2048 --max-tokens 64 --output benchmark_results.csv
+uv run python examples/04_benchmark.py --model-path models/qwen2.5-1.5b-instruct-q4_k_m.gguf models/qwen2.5-3b-instruct-q4_k_m.gguf --n-threads 1 2 --n-ctx 512 2048 --max-tokens 64 --output benchmark_results.csv
 ```
 
 Cada combinación se ejecuta una vez por defecto; usa `--repeats 3` para
