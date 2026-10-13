@@ -15,8 +15,8 @@ tiene cuatro fases:
 No necesitas GPU, ni API keys, ni servicios de pago.
 
 Las dependencias se gestionan con [uv](https://docs.astral.sh/uv/) mediante
-`pyproject.toml` / `uv.lock`. Si no puedes usar Codespaces ni tienes uv, también
-puedes instalarlas con `pip` (ver [Alternativa local](#alternativa-local-sin-codespaces)).
+`pyproject.toml` / `uv.lock`. Si no puedes usar Codespaces o algún servicio
+externo falla, consulta [fallback.md](fallback.md).
 
 ## Conceptos clave
 
@@ -44,19 +44,19 @@ pyproject.toml / uv.lock          Dependencias del proyecto
 src/slm_cpu_serving/
   metrics.py                      Carga el modelo, ejecuta el prompt y mide tiempos/RAM/CPU
 examples/
-  01_inferencia_local.py          Fase 1: inferencia local
-  02_servidor.md                  Fase 2: guía para levantar el servidor compatible con OpenAI
-  02_cliente_api.py               Fase 2: cliente que usa el SDK de openai
-  03_benchmark.md                 Fase 3: guía del ejercicio de benchmarking
-  03_benchmark.py                 Fase 3: barrido de configuraciones → CSV
-  04_challenge.md                 Fase 4: guía del challenge
-  04_challenge.py                 Fase 4: clasificador de reseñas que debes optimizar
+  01_local_inference.py           Fase 1: inferencia local
+  02_start_server.md              Fase 2: guía para levantar el servidor compatible con OpenAI
+  03_api_client.py                Fase 2: cliente que usa el SDK de openai
+  04_benchmark.py                 Fase 3: barrido de configuraciones → CSV
+  05_benchmark.md                 Fase 3: guía del ejercicio de benchmarking
+  06_challenge.md                 Fase 4: guía del challenge
+  07_challenge.py                 Fase 4: clasificador de reseñas que debes optimizar
 ```
 
 Si quieres ver cómo funciona la inferencia por dentro, empieza por
 [src/slm_cpu_serving/metrics.py](src/slm_cpu_serving/metrics.py).
 
-## Inicio rápido (GitHub Codespaces — recomendado)
+## Quick start (GitHub Codespaces — recomendado)
 
 1. En GitHub, haz clic en **Code → Codespaces → Create codespace on main**.
 2. Espera a que se construya el contenedor. El `postCreateCommand` ejecuta
@@ -78,80 +78,28 @@ Si quieres ver cómo funciona la inferencia por dentro, empieza por
 4. Ejecuta el ejemplo:
 
    ```bash
-   uv run python examples/01_inferencia_local.py --model-path models/qwen2.5-1.5b-instruct-q4_k_m.gguf
+   uv run python examples/01_local_inference.py --model-path models/qwen2.5-1.5b-instruct-q4_k_m.gguf
    ```
 
    O bien, con el modelo de 3B:
 
    ```bash
-   uv run python examples/01_inferencia_local.py --model-path models/qwen2.5-3b-instruct-q4_k_m.gguf
+   uv run python examples/01_local_inference.py --model-path models/qwen2.5-3b-instruct-q4_k_m.gguf
    ```
 
    Puedes probar tu propio prompt con `--prompt "..."`. Por defecto el script
    usa todos los núcleos de CPU; para cambiarlo usa `--n-threads N`.
 
-## Alternativa local (sin Codespaces)
+## Alternativa si algo falla (contingencias)
 
-Usa esta opción si el Codespace no funciona. Requiere **Python 3.12 o
-superior** y **Git**. No hace falta GPU, Docker ni un compilador de C++:
-`llama-cpp-python` se instala desde wheels precompilados para CPU.
-
-> **¿Tienes uv instalado?** Basta con `uv sync` y los mismos comandos
-> `uv run python ...` que en Codespaces. Los pasos de abajo son para hacerlo
-> solo con `pip`.
-
-1. Clona el repositorio:
-
-   ```bash
-   git clone https://github.com/leosannlsn/slm_cpu_serving.git
-   cd slm_cpu_serving
-   ```
-
-2. Crea y activa un entorno virtual e instala el proyecto con sus
-   dependencias. La opción `--extra-index-url` apunta a los wheels
-   precompilados de `llama-cpp-python`; sin ella, pip intentaría compilar
-   llama.cpp desde el código fuente.
-
-   **Windows (PowerShell):**
-
-   ```powershell
-   python -m venv .venv
-   .venv\Scripts\Activate.ps1
-   pip install -e . --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu --only-binary llama-cpp-python
-   ```
-
-   > Si PowerShell bloquea el script de activación, ejecuta primero
-   > `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
-
-   **macOS / Linux:**
-
-   ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate
-   pip install -e . --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu --only-binary llama-cpp-python
-   ```
-
-3. Descarga el modelo. En macOS/Linux usa los mismos comandos del paso 3 de
-   Codespaces. En **Windows (PowerShell)** usa `curl.exe`:
-
-   ```powershell
-   mkdir models
-   curl.exe -L -o models/qwen2.5-1.5b-instruct-q4_k_m.gguf "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf"
-   ```
-
-4. Ejecuta el ejemplo (con el entorno virtual activado):
-
-   ```bash
-   python examples/01_inferencia_local.py --model-path models/qwen2.5-1.5b-instruct-q4_k_m.gguf
-   ```
-
-Cada vez que abras una terminal nueva, recuerda activar el entorno virtual
-antes de ejecutar los ejemplos. Con el entorno activado, donde este README o
-las guías digan `uv run python`, usa simplemente `python`.
+Si Codespaces, GitHub, PyPI o Hugging Face no están disponibles, o la conexión
+es inestable, consulta [fallback.md](fallback.md): recoge todas las situaciones
+posibles, con la instalación local, el wheelhouse offline y el modelo
+descargado previamente.
 
 ## Fase 1: inferencia local
 
-Ejecuta [examples/01_inferencia_local.py](examples/01_inferencia_local.py)
+Ejecuta [examples/01_local_inference.py](examples/01_local_inference.py)
 (ver el inicio rápido). Al terminar, el script muestra la respuesta del modelo
 y estas métricas:
 
@@ -168,30 +116,30 @@ la Fase 3.
 
 ## Fase 2: servir el modelo con una API compatible con OpenAI
 
-Consulta [examples/02_servidor.md](examples/02_servidor.md) para
+Consulta [examples/02_start_server.md](examples/02_start_server.md) para
 levantar un servidor local compatible con OpenAI (`llama_cpp.server`) y luego
-ejecuta [examples/02_cliente_api.py](examples/02_cliente_api.py) contra él usando
+ejecuta [examples/03_api_client.py](examples/03_api_client.py) contra él usando
 el SDK de `openai`.
 
 ## Fase 3: ejercicio de benchmarking
 
-Consulta [examples/03_benchmark.md](examples/03_benchmark.md) para ejecutar
-[examples/03_benchmark.py](examples/03_benchmark.py), que recorre distintas
+Consulta [examples/05_benchmark.md](examples/05_benchmark.md) para ejecutar
+[examples/04_benchmark.py](examples/04_benchmark.py), que recorre distintas
 cantidades de hilos, tamaños de contexto y archivos de modelo, y guarda los
 resultados en un CSV para discutirlos en clase.
 
 ```bash
-uv run python examples/03_benchmark.py --model-path models/qwen2.5-1.5b-instruct-q4_k_m.gguf models/qwen2.5-3b-instruct-q4_k_m.gguf --n-threads 1 2 --n-ctx 512 2048 --max-tokens 64 --output benchmark_results.csv
+uv run python examples/04_benchmark.py --model-path models/qwen2.5-1.5b-instruct-q4_k_m.gguf models/qwen2.5-3b-instruct-q4_k_m.gguf --n-threads 1 2 --n-ctx 512 2048 --max-tokens 64 --output benchmark_results.csv
 ```
 
 El objetivo: obtener tus propios números, compararlos y explicar las
 diferencias. Las preguntas para la discusión están en
-[examples/03_benchmark.md](examples/03_benchmark.md).
+[examples/05_benchmark.md](examples/05_benchmark.md).
 
 ## Fase 4: challenge
 
 Usa todo lo anterior para construir un clasificador de reseñas (positiva /
 negativa / neutral) que acierte al menos 18 de 20 y responda en menos de 3
 segundos por reseña. Las reglas y las pistas están en
-[examples/04_challenge.md](examples/04_challenge.md); el script a optimizar es
-[examples/04_challenge.py](examples/04_challenge.py).
+[examples/06_challenge.md](examples/06_challenge.md); el script a optimizar es
+[examples/07_challenge.py](examples/07_challenge.py).
