@@ -5,11 +5,12 @@
 En este taller vas a ejecutar un modelo de lenguaje pequeño (SLM, *Small
 Language Model*) cuantizado **solo con CPU**, usando
 [llama-cpp-python](https://github.com/abetlen/llama-cpp-python). El taller
-tiene tres fases:
+tiene cuatro fases:
 
 - **Fase 1:** inferencia local directa desde Python.
 - **Fase 2:** servir el modelo como una API compatible con OpenAI.
 - **Fase 3:** medir y comparar el rendimiento (benchmarking).
+- **Fase 4:** challenge: construir un clasificador rápido y preciso.
 
 No necesitas GPU, ni API keys, ni servicios de pago.
 
@@ -48,6 +49,8 @@ examples/
   02_cliente_api.py               Fase 2: cliente que usa el SDK de openai
   03_benchmark.md                 Fase 3: guía del ejercicio de benchmarking
   03_benchmark.py                 Fase 3: barrido de configuraciones → CSV
+  04_challenge.md                 Fase 4: guía del challenge
+  04_challenge.py                 Fase 4: clasificador de reseñas que debes optimizar
 ```
 
 Si quieres ver cómo funciona la inferencia por dentro, empieza por
@@ -181,6 +184,14 @@ resultados en un CSV para discutirlos en clase.
 uv run python examples/03_benchmark.py --model-path models/qwen2.5-1.5b-instruct-q4_k_m.gguf models/qwen2.5-3b-instruct-q4_k_m.gguf --n-threads 1 2 --n-ctx 512 2048 --max-tokens 64 --output benchmark_results.csv
 ```
 
-El reto: obtener tus propios números, compararlos y explicar las diferencias.
-Las preguntas para la discusión están en
+El objetivo: obtener tus propios números, compararlos y explicar las
+diferencias. Las preguntas para la discusión están en
 [examples/03_benchmark.md](examples/03_benchmark.md).
+
+## Fase 4: challenge
+
+Usa todo lo anterior para construir un clasificador de reseñas (positiva /
+negativa / neutral) que acierte al menos 18 de 20 y responda en menos de 3
+segundos por reseña. Las reglas y las pistas están en
+[examples/04_challenge.md](examples/04_challenge.md); el script a optimizar es
+[examples/04_challenge.py](examples/04_challenge.py).

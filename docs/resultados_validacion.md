@@ -110,3 +110,66 @@ Observaciones para la discusión en clase:
 > **Nota:** los prompts por defecto de los scripts están en español; los números
 > de estas tablas se midieron con el prompt original en inglés, así que tus
 > resultados pueden variar ligeramente.
+
+## Fase 4: challenge (soluciones de referencia)
+
+Medido en local (Windows, CPU de escritorio) con el servidor a `--n_threads 2`.
+Esta CPU es mucho más rápida que un Codespace, así que **los tiempos absolutos
+no son representativos**: hay que validar en Codespaces que el objetivo de 3 s
+se puede cumplir con el modelo de 1.5B y ver dónde queda el de 3B.
+
+| Configuración | Modelo | Aciertos | Tiempo medio |
+|---------------|--------|----------|--------------|
+20 reseñas (7 positivas, 7 negativas, 6 neutrales); objetivo: **≥ 90 %
+(18/20)** y tiempo medio < 3 s.
+
+| Configuración | Modelo | Aciertos | Tiempo medio |
+|---------------|--------|----------|--------------|
+| Inicial (prompt abierto, `MAX_TOKENS = 50`, `TEMPERATURE = 0`) | 1.5B | 14/20 | 2.02s |
+| Inicial | 3B | 10/20 | 3.76s |
+| Inicial con `MAX_TOKENS = 100` (dos ejecuciones) | 1.5B | 15/20 y 16/20 | ~3.2s |
+| "Responde solo con una palabra", `MAX_TOKENS = 3`, `TEMPERATURE = 0` | 1.5B | 15/20 | 0.20s |
+| Igual + definición de cada categoría en el `SYSTEM_PROMPT` | 1.5B | 18/20 | 0.20s |
+| "Responde solo con una palabra", `MAX_TOKENS = 3`, `TEMPERATURE = 0` | 3B | 20/20 | 0.33s |
+| Igual + definición de cada categoría en el `SYSTEM_PROMPT` | 3B | 20/20 | 0.36s |
+
+El script busca la primera etiqueta que aparece en la respuesta, así que con la
+configuración inicial (respuestas largas) el modelo ya acierta bastantes, pero
+se queda lejos del 90 %. Con un objetivo del 80 % la inicial llegaba a veces
+por sí sola (16/20 con `MAX_TOKENS = 100`); por eso el objetivo es del 90 %.
+
+Cambiar al modelo de 3B sin tocar nada más **no basta**: con respuestas largas
+acierta incluso menos (el texto se corta antes de dar la etiqueta) y es lento.
+
+El reto extra con el 1.5B queda **justo** (18/20): cualquier fallo de más lo
+deja fuera. Conviene comprobarlo en Codespaces; si no se alcanza, se puede
+bajar el objetivo del reto extra o mejorar la definición de "neutral".
+
+La solución esperada del challenge es el 3B con respuestas de una palabra; el
+**reto extra** (hacerlo con el 1.5B) obliga a definir las categorías en el
+`SYSTEM_PROMPT`.
+
+Lecciones que deberían salir:
+
+- **El tiempo lo dominan los tokens generados**: pedir una sola palabra y
+  limitar `MAX_TOKENS` baja el tiempo de ~2–4 s a menos de 0.5 s sin cambiar de
+  modelo.
+- **La velocidad no arregla la calidad**: con respuestas cortas, el 1.5B
+  clasifica todas las reseñas neutrales como positivas. Hace falta mejorar el
+  prompt (definir "neutral") o usar un modelo más grande.
+- **Calidad vs. latencia**: el 3B acierta todo incluso con un prompt simple,
+  pero es ~1.6× más lento; en Codespaces eso puede acercarlo o pasarlo del
+  límite de 3 s.
+
+`SYSTEM_PROMPT` usado en las filas "con definición":
+
+```text
+Clasifica el sentimiento de reseñas de productos. Responde solo con una palabra:
+- positiva: el cliente está contento y lo recomienda.
+- negativa: el cliente está descontento o el producto falla.
+- neutral: la opinión es tibia o mixta; el producto cumple, sin entusiasmo ni quejas graves.
+```
+
+con `PROMPT_TEMPLATE = "Reseña: {review}"`.
+
+Me falta probar en el codespace para ver si es asequible sacar
