@@ -1,166 +1,186 @@
-# SLM CPU Serving — Workshop Repo
+# SLM CPU Serving — Repositorio del taller
 
 **Beyond ChatGPT: Real-Time AI Inference on Your Laptop**
 
-This repo validates that GitHub Codespaces is a viable, low-friction
-environment for running quantized small language models (SLMs) on CPU with
-[llama-cpp-python](https://github.com/abetlen/llama-cpp-python), both for
-direct local inference (**Phase 1**) and for OpenAI-compatible API serving
-(**Phase 2**).
+En este taller vas a ejecutar un modelo de lenguaje pequeño (SLM, *Small
+Language Model*) cuantizado **solo con CPU**, usando
+[llama-cpp-python](https://github.com/abetlen/llama-cpp-python). El taller
+tiene tres fases:
 
-Dependencies are managed with [uv](https://docs.astral.sh/uv/) via
-`pyproject.toml` / `uv.lock` — no `requirements.txt`.
+- **Fase 1:** inferencia local directa desde Python.
+- **Fase 2:** servir el modelo como una API compatible con OpenAI.
+- **Fase 3:** medir y comparar el rendimiento (benchmarking).
 
-## Quick start (GitHub Codespaces — recommended)
+No necesitas GPU, ni API keys, ni servicios de pago.
 
-1. Click **Code → Codespaces → Create codespace on main**.
-2. Wait for the container to build. `postCreateCommand` runs `uv sync`
-   automatically, creating `.venv` with all dependencies.
-3. Download a quantized model (one-time, ~1 GB):
+Las dependencias se gestionan con [uv](https://docs.astral.sh/uv/) mediante
+`pyproject.toml` / `uv.lock`. Si no puedes usar Codespaces ni tienes uv, también
+puedes instalarlas con `pip` (ver [Alternativa local](#alternativa-local-sin-codespaces)).
+
+## Conceptos clave
+
+Un resumen rápido de los términos que usaremos (la presentación del taller
+los explica en detalle):
+
+| Concepto | Qué significa |
+|----------|---------------|
+| **Inferencia** | Usar un modelo ya entrenado para generar una respuesta. Los pesos no cambian: solo se pasa la entrada por la red para obtener la salida. |
+| **Modelo** | Archivo con los pesos de la red neuronal ya entrenada. En este taller usamos Qwen2.5-Instruct en formato **GGUF**, el formato de archivo de llama.cpp para modelos cuantizados (los `.gguf` de la carpeta `models/`). |
+| **Motor de inferencia (llama.cpp)** | Programa que carga el modelo y hace los cálculos para generar texto. Usamos [llama.cpp](https://github.com/ggml-org/llama.cpp), optimizado para CPU, a través de `llama-cpp-python`, que nos permite usarlo desde Python. |
+| **SLM** | Modelo de lenguaje "pequeño" (aquí, 1.5B y 3B parámetros) que cabe en la RAM de una laptop. |
+| **Cuantización** | Guardar los pesos con menos bits (p. ej. 4 bits en lugar de 16) para reducir memoria y acelerar la CPU, a cambio de algo de precisión. `Q4_K_M` es un formato de ~4 bits. |
+| **Token y tokenizador** | El modelo no lee texto, sino *tokens*: fragmentos de texto (aprox. una sílaba o palabra corta) representados como números. El **tokenizador** convierte el texto en tokens y viceversa; cada modelo trae el suyo. El mismo texto puede dar distinta cantidad de tokens según el idioma. |
+| **Latencia del primer token** | Tiempo desde que envías el prompt hasta que aparece el primer token. Es lo que el usuario percibe como "tiempo de reacción". |
+| **Throughput (tokens/s)** | Velocidad de generación una vez que el modelo empezó a responder. |
+| **Ventana de contexto (`n_ctx`)** | Cantidad máxima de tokens (prompt + respuesta) que el modelo puede "recordar" a la vez. |
+| **Hilos (`n_threads`)** | Número de hilos de CPU que usa llama.cpp para el cálculo. |
+
+## Estructura del repositorio
+
+```text
+.devcontainer/devcontainer.json   Configuración de Codespaces
+pyproject.toml / uv.lock          Dependencias del proyecto
+src/slm_cpu_serving/
+  metrics.py                      Carga el modelo, ejecuta el prompt y mide tiempos/RAM/CPU
+examples/
+  01_inferencia_local.py          Fase 1: inferencia local
+  02_servidor.md                  Fase 2: guía para levantar el servidor compatible con OpenAI
+  02_cliente_api.py               Fase 2: cliente que usa el SDK de openai
+  03_benchmark.md                 Fase 3: guía del ejercicio de benchmarking
+  03_benchmark.py                 Fase 3: barrido de configuraciones → CSV
+```
+
+Si quieres ver cómo funciona la inferencia por dentro, empieza por
+[src/slm_cpu_serving/metrics.py](src/slm_cpu_serving/metrics.py).
+
+## Inicio rápido (GitHub Codespaces — recomendado)
+
+1. En GitHub, haz clic en **Code → Codespaces → Create codespace on main**.
+2. Espera a que se construya el contenedor. El `postCreateCommand` ejecuta
+   `uv sync` automáticamente y crea `.venv` con todas las dependencias.
+3. Descarga un modelo cuantizado (solo una vez, ~1 GB):
 
    ```bash
    mkdir -p models
-   curl -L -o models/qwen2.5-1.5b-instruct-q4_k_m.gguf \
-     "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf"
+   curl -L -o models/qwen2.5-1.5b-instruct-q4_k_m.gguf "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf"
    ```
 
-   Optionally, the preferred (larger) model instead (one-time, ~2 GB):
+   Opcionalmente, descarga el modelo preferido (más grande) (solo una vez, ~2 GB):
 
    ```bash
    mkdir -p models
-   curl -L -o models/qwen2.5-3b-instruct-q4_k_m.gguf \
-     "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf"
+   curl -L -o models/qwen2.5-3b-instruct-q4_k_m.gguf "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf"
    ```
 
-4. Run the example:
+4. Ejecuta el ejemplo:
 
    ```bash
-   uv run python examples/01_local_inference.py \
-     --model-path models/qwen2.5-1.5b-instruct-q4_k_m.gguf
+   uv run python examples/01_inferencia_local.py --model-path models/qwen2.5-1.5b-instruct-q4_k_m.gguf
    ```
 
-   Or, with the 3B model:
+   O bien, con el modelo de 3B:
 
    ```bash
-   uv run python examples/01_local_inference.py \
-     --model-path models/qwen2.5-3b-instruct-q4_k_m.gguf \
-     --n-threads $(nproc)
+   uv run python examples/01_inferencia_local.py --model-path models/qwen2.5-3b-instruct-q4_k_m.gguf
    ```
 
-## Local fallback
+   Puedes probar tu propio prompt con `--prompt "..."`. Por defecto el script
+   usa todos los núcleos de CPU; para cambiarlo usa `--n-threads N`.
 
-Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/getting-started/installation/).
+## Alternativa local (sin Codespaces)
+
+Usa esta opción si el Codespace no funciona. Requiere **Python 3.12 o
+superior** y **Git**. No hace falta GPU, Docker ni un compilador de C++:
+`llama-cpp-python` se instala desde wheels precompilados para CPU.
+
+> **¿Tienes uv instalado?** Basta con `uv sync` y los mismos comandos
+> `uv run python ...` que en Codespaces. Los pasos de abajo son para hacerlo
+> solo con `pip`.
+
+1. Clona el repositorio:
+
+   ```bash
+   git clone https://github.com/leosannlsn/slm_cpu_serving.git
+   cd slm_cpu_serving
+   ```
+
+2. Crea y activa un entorno virtual e instala el proyecto con sus
+   dependencias. La opción `--extra-index-url` apunta a los wheels
+   precompilados de `llama-cpp-python`; sin ella, pip intentaría compilar
+   llama.cpp desde el código fuente.
+
+   **Windows (PowerShell):**
+
+   ```powershell
+   python -m venv .venv
+   .venv\Scripts\Activate.ps1
+   pip install -e . --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu --only-binary llama-cpp-python
+   ```
+
+   > Si PowerShell bloquea el script de activación, ejecuta primero
+   > `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
+
+   **macOS / Linux:**
+
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -e . --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu --only-binary llama-cpp-python
+   ```
+
+3. Descarga el modelo. En macOS/Linux usa los mismos comandos del paso 3 de
+   Codespaces. En **Windows (PowerShell)** usa `curl.exe`:
+
+   ```powershell
+   mkdir models
+   curl.exe -L -o models/qwen2.5-1.5b-instruct-q4_k_m.gguf "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf"
+   ```
+
+4. Ejecuta el ejemplo (con el entorno virtual activado):
+
+   ```bash
+   python examples/01_inferencia_local.py --model-path models/qwen2.5-1.5b-instruct-q4_k_m.gguf
+   ```
+
+Cada vez que abras una terminal nueva, recuerda activar el entorno virtual
+antes de ejecutar los ejemplos. Con el entorno activado, donde este README o
+las guías digan `uv run python`, usa simplemente `python`.
+
+## Fase 1: inferencia local
+
+Ejecuta [examples/01_inferencia_local.py](examples/01_inferencia_local.py)
+(ver el inicio rápido). Al terminar, el script muestra la respuesta del modelo
+y estas métricas:
+
+- Tiempo de carga del modelo
+- Latencia del primer token
+- Tiempo total y tokens/s
+- RAM pico y uso de CPU
+
+> **Nota:** un uso de CPU mayor a 100% significa que el proceso está usando
+> más de un núcleo (100% = un núcleo completo).
+
+Prueba con los dos modelos (1.5B y 3B) y anota las diferencias: las usaremos en
+la Fase 3.
+
+## Fase 2: servir el modelo con una API compatible con OpenAI
+
+Consulta [examples/02_servidor.md](examples/02_servidor.md) para
+levantar un servidor local compatible con OpenAI (`llama_cpp.server`) y luego
+ejecuta [examples/02_cliente_api.py](examples/02_cliente_api.py) contra él usando
+el SDK de `openai`.
+
+## Fase 3: ejercicio de benchmarking
+
+Consulta [examples/03_benchmark.md](examples/03_benchmark.md) para ejecutar
+[examples/03_benchmark.py](examples/03_benchmark.py), que recorre distintas
+cantidades de hilos, tamaños de contexto y archivos de modelo, y guarda los
+resultados en un CSV para discutirlos en clase.
 
 ```bash
-uv sync
-uv run python examples/01_local_inference.py --model-path <path-to-gguf>
+uv run python examples/03_benchmark.py --model-path models/qwen2.5-1.5b-instruct-q4_k_m.gguf models/qwen2.5-3b-instruct-q4_k_m.gguf --n-threads 1 2 --n-ctx 512 2048 --max-tokens 64 --output benchmark_results.csv
 ```
 
-## Phase 1 validation metrics
-
-Fallback model (Qwen2.5-1.5B-Instruct Q4_K_M, ~1 GB), validated in Codespaces:
-
-| Metric              | Value |
-|----------------------|-------|
-| Model size           | ~1 GB (Q4_K_M) |
-| RAM usage            | 1834.3 MB (peak) |
-| CPU usage            | 165.0% (n_threads=2) |
-| Load time            | 1.24s |
-| First-token latency  | 1.93s |
-| Total latency        | 6.39s |
-| Tokens/sec           | 7.36  |
-
-Preferred model (Qwen2.5-3B-Instruct Q4_K_M, ~2 GB), validated locally
-(Windows, 2 threads):
-
-| Metric              | Value |
-|----------------------|-------|
-| Model size           | ~2 GB (Q4_K_M) |
-| RAM usage            | 3292.2 MB (peak) |
-| CPU usage            | 245.1% (n_threads=2) |
-| Load time            | 1.83s |
-| First-token latency  | 0.68s |
-| Total latency        | 5.78s |
-| Tokens/sec           | 7.96  |
-
-Preferred model (Qwen2.5-3B-Instruct Q4_K_M, ~2 GB), validated in Codespaces
-(2 threads):
-
-| Metric              | Value |
-|----------------------|-------|
-| Model size           | ~2 GB (Q4_K_M) |
-| RAM usage            | 3464.2 MB (peak) |
-| CPU usage            | 99.1% (n_threads=2) |
-| First-token latency  | 2.90s |
-| Total latency        | 13.71s |
-| Tokens/sec           | 4.16  |
-
-The 3B model roughly doubles RAM usage (~1.8 GB → ~3.3 GB peak) but fits
-comfortably within the default Codespaces machine type (2-core/8GB), with
-room to spare for a classroom setting.
-
-## Phase 2: OpenAI-compatible API serving
-
-See [examples/02_start_server.md](examples/02_start_server.md) to start a
-local OpenAI-compatible server (`llama_cpp.server`), then run
-[examples/03_api_client.py](examples/03_api_client.py) against it using the
-`openai` SDK.
-
-Validated locally (Windows, 2 threads, same 1.5B Q4_K_M model):
-
-| Metric       | Value |
-|--------------|-------|
-| Total time   | 2.78s |
-| Tokens       | 30    |
-| Tokens/sec   | 10.80 |
-
-Validated in Codespaces (same 1.5B Q4_K_M model):
-
-| Metric       | Value |
-|--------------|-------|
-| Total time   | 7.21s |
-| Tokens       | 48    |
-| Tokens/sec   | 6.65  |
-
-## Phase 3: Benchmarking exercise
-
-See [examples/05_benchmark.md](examples/05_benchmark.md) to run
-[examples/04_benchmark.py](examples/04_benchmark.py), which sweeps thread
-counts, context sizes, and model files and writes the results to a CSV for
-classroom discussion.
-
-```bash
-uv run python examples/04_benchmark.py \
-  --model-path models/qwen2.5-1.5b-instruct-q4_k_m.gguf models/qwen2.5-3b-instruct-q4_k_m.gguf \
-  --n-threads 1 2 \
-  --n-ctx 512 2048 \
-  --max-tokens 64 \
-  --output benchmark_results.csv
-```
-
-Validated in Codespaces:
-
-| Model | Threads | Context | Total time | Tokens/sec | Peak RAM | CPU usage |
-|-------|---------|---------|------------|------------|----------|-----------|
-| 1.5B  | 1       | 512     | 8.01s      | 5.87       | 1790.7 MB | 109.5% |
-| 1.5B  | 1       | 2048    | 7.86s      | 5.98       | 1835.9 MB | 109.2% |
-| 1.5B  | 2       | 512     | 6.12s      | 7.69       | 1797.3 MB | 171.2% |
-| 1.5B  | 2       | 2048    | 6.32s      | 7.43       | 1853.6 MB | 169.2% |
-| 3B    | 1       | 512     | 17.28s     | 3.30       | 3427.5 MB | 76.3%  |
-| 3B    | 1       | 2048    | 17.43s     | 3.27       | 3481.9 MB | 112.0% |
-| 3B    | 2       | 512     | 13.98s     | 4.08       | 3417.1 MB | 174.1% |
-| 3B    | 2       | 2048    | 17.45s     | 3.27       | 3489.2 MB | 154.1% |
-
-Observations for classroom discussion:
-
-- **Thread count** has the biggest effect: going from 1 → 2 threads gives a
-  ~25-30% tokens/sec improvement on both models.
-- **Context size** (512 vs 2048) barely moves tokens/sec or RAM for these
-  short completions — larger context mainly matters once prompts/history
-  grow, not for generation speed itself.
-- **Model size** roughly halves throughput and nearly doubles peak RAM going
-  from 1.5B → 3B, a clean example of the quality/latency/resource trade-off.
-- The 3B/1-thread/512-ctx row's 12s load time (see raw CSV) was a cold
-  filesystem cache miss on first read of the 2GB file — a good teaching
-  moment about why benchmarks should discard the first run or warm the cache.
-
+El reto: obtener tus propios números, compararlos y explicar las diferencias.
+Las preguntas para la discusión están en
+[examples/03_benchmark.md](examples/03_benchmark.md).

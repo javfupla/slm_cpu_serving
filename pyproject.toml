@@ -1,7 +1,7 @@
 [project]
 name = "slm-cpu-serving"
 version = "0.1.0"
-description = "Add your description here"
+description = "Taller: inferencia de modelos de lenguaje pequeños (SLM) en CPU con llama-cpp-python"
 readme = "README.md"
 authors = [
     { name = "Leonardo Santamarina", email = "Leonardo.Santamarina@nielseniq.com" },

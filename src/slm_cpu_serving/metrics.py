@@ -1,4 +1,4 @@
-"""Shared inference + resource-measurement helpers for the example scripts."""
+"""Funciones compartidas de inferencia y medición de recursos para los scripts de ejemplo."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from llama_cpp import Llama
 
 
 class PeakMemorySampler:
-    """Background thread that tracks peak RSS (bytes) for the current process."""
+    """Hilo en segundo plano que registra el pico de RSS (bytes) del proceso actual."""
 
     def __init__(self, process: psutil.Process, interval: float = 0.1) -> None:
         self._process = process
@@ -53,11 +53,11 @@ def run_inference(
     n_threads: int | None = None,
     max_tokens: int = 128,
 ) -> InferenceResult:
-    """Load a GGUF model, run one prompt, and return timing/resource metrics."""
+    """Carga un modelo GGUF, ejecuta un prompt y devuelve métricas de tiempo y recursos."""
     process = psutil.Process()
     process.cpu_percent(
         interval=None
-    )  # prime the counter; first call always returns 0.0
+    )  # inicializa el contador; la primera llamada siempre devuelve 0.0
 
     mem_sampler = PeakMemorySampler(process)
     mem_sampler.start()
