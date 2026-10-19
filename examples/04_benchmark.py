@@ -1,7 +1,7 @@
-"""Phase 3 benchmarking: sweep thread counts, context sizes, and model files.
+"""Phase 3 benchmarking: sweep thread counts, context sizes, max tokens, and model files.
 
-Writes one CSV row per (model, n_threads, n_ctx) combination so results are
-easy to drop into a spreadsheet or discuss in class.
+Writes one CSV row per (model, n_threads, n_ctx, max_tokens) combination so
+results are easy to drop into a spreadsheet or discuss in class.
 """
 
 import argparse
@@ -18,6 +18,7 @@ CSV_FIELDS = [
     "model",
     "n_threads",
     "n_ctx",
+    "max_tokens",
     "load_time_s",
     "first_token_latency_s",
     "total_time_s",
@@ -30,7 +31,7 @@ CSV_FIELDS = [
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Benchmark inference across thread counts, context sizes, and models."
+        description="Benchmark inference across thread counts, context sizes, max tokens, and models."
     )
     parser.add_argument(
         "--model-path",
@@ -58,8 +59,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--max-tokens",
         type=int,
-        default=128,
-        help="Maximum tokens to generate per run.",
+        nargs="+",
+        default=[128],
+        help="Maximum tokens to generate per run (values to sweep).",
     )
     parser.add_argument(
         "--repeats", type=int, default=1, help="Number of repeats per combination."
@@ -81,10 +83,11 @@ def main() -> None:
             sys.exit(1)
 
     combinations = [
-        (model_path, n_threads, n_ctx)
+        (model_path, n_threads, n_ctx, max_tokens)
         for model_path in args.model_path
         for n_threads in args.n_threads
         for n_ctx in args.n_ctx
+        for max_tokens in args.max_tokens
         for _ in range(args.repeats)
     ]
 
@@ -94,23 +97,26 @@ def main() -> None:
         writer = csv.DictWriter(f, fieldnames=CSV_FIELDS)
         writer.writeheader()
 
-        for i, (model_path, n_threads, n_ctx) in enumerate(combinations, start=1):
+        for i, (model_path, n_threads, n_ctx, max_tokens) in enumerate(
+            combinations, start=1
+        ):
             print(
                 f"[{i}/{len(combinations)}] model={model_path} "
-                f"n_threads={n_threads} n_ctx={n_ctx}"
+                f"n_threads={n_threads} n_ctx={n_ctx} max_tokens={max_tokens}"
             )
             result = run_inference(
                 model_path,
                 args.prompt,
                 n_ctx=n_ctx,
                 n_threads=n_threads,
-                max_tokens=args.max_tokens,
+                max_tokens=max_tokens,
             )
             writer.writerow(
                 {
                     "model": Path(model_path).name,
                     "n_threads": n_threads,
                     "n_ctx": n_ctx,
+                    "max_tokens": max_tokens,
                     "load_time_s": f"{result.load_time:.3f}",
                     "first_token_latency_s": (
                         f"{result.first_token_latency:.3f}"

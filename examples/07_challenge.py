@@ -7,6 +7,7 @@ until you reach the goal. Do not change the reviews or the evaluation.
 import argparse
 import os
 import re
+import textwrap
 import time
 import unicodedata
 
@@ -119,13 +120,11 @@ def main() -> None:
         hit = predicted == expected
         hits += hit
 
-        summary = " ".join(answer.split())
-        if len(summary) > 60:
-            summary = summary[:57] + "..."
         print(
             f"[{i:2}] {'OK  ' if hit else 'FAIL'} expected={expected:<8} "
-            f"got={predicted or '?':<8} {elapsed:5.2f}s  {summary!r}"
+            f"got={predicted or '?':<8} {elapsed:5.2f}s"
         )
+        print(textwrap.indent(answer.strip() or "(empty response)", "     "))
 
     accuracy = hits / len(REVIEWS)
     mean_time = sum(times) / len(times)
