@@ -125,11 +125,11 @@ el SDK de `openai`.
 
 Consulta [examples/05_benchmark.md](examples/05_benchmark.md) para ejecutar
 [examples/04_benchmark.py](examples/04_benchmark.py), que recorre distintas
-cantidades de hilos, tamaños de contexto y archivos de modelo, y guarda los
-resultados en un CSV para discutirlos en clase.
+cantidades de hilos, máximos de tokens de salida y archivos de modelo, y guarda
+los resultados en un CSV para discutirlos en clase.
 
 ```bash
-uv run python examples/04_benchmark.py --model-path models/qwen2.5-1.5b-instruct-q4_k_m.gguf models/qwen2.5-3b-instruct-q4_k_m.gguf --n-threads 1 2 --n-ctx 512 2048 --max-tokens 64 --output benchmark_results.csv
+uv run python examples/04_benchmark.py --model-path models/qwen2.5-1.5b-instruct-q4_k_m.gguf models/qwen2.5-3b-instruct-q4_k_m.gguf --n-threads 1 2 --max-tokens 16 64 --output benchmark_results.csv
 ```
 
 El objetivo: obtener tus propios números, compararlos y explicar las

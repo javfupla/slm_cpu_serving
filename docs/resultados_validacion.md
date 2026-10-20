@@ -72,7 +72,42 @@ Validado en Codespaces (mismo modelo 1.5B Q4_K_M):
 
 ## Fase 3: ejercicio de benchmarking
 
-Comando usado:
+### Barrido actual (hilos × máximo de tokens de salida)
+
+Comando del README:
+
+```bash
+uv run python examples/04_benchmark.py --model-path models/qwen2.5-1.5b-instruct-q4_k_m.gguf models/qwen2.5-3b-instruct-q4_k_m.gguf --n-threads 1 2 --max-tokens 16 64 --output benchmark_results.csv
+```
+
+
+| Modelo | Hilos | Máx. tokens | Tokens | Primer token | Tiempo total | Tokens/s | RAM pico  |
+|--------|-------|-------------|--------|--------------|--------------|----------|-----------|
+| 1.5B   | 1     | 16          | 16     | 0.23s        | 1.19s        | 13.46    | 1712.6 MB |
+| 1.5B   | 1     | 64          | 47     | 0.21s        | 3.31s        | 14.21    | 1715.6 MB |
+| 1.5B   | 2     | 16          | 16     | 0.20s        | 0.77s        | 20.74    | 1716.9 MB |
+| 1.5B   | 2     | 64          | 47     | 0.24s        | 2.12s        | 22.14    | 1714.3 MB |
+| 3B     | 1     | 16          | 16     | 0.40s        | 2.48s        | 6.45     | 3303.1 MB |
+| 3B     | 1     | 64          | 46     | 0.36s        | 6.37s        | 7.23     | 3305.9 MB |
+| 3B     | 2     | 16          | 16     | 0.38s        | 1.50s        | 10.70    | 3301.5 MB |
+| 3B     | 2     | 64          | 46     | 0.38s        | 3.71s        | 12.41    | 3303.3 MB |
+
+Observaciones para la discusión en clase:
+
+- **El máximo de tokens de salida** cambia casi solo el **tiempo total**: es
+  proporcional a los tokens generados. La latencia del primer token y los
+  tokens/s apenas se mueven, y la RAM tampoco.
+- Con `--max-tokens 64` el modelo genera solo ~47 tokens: termina la respuesta
+  antes de llegar al límite. El límite recorta respuestas, pero no obliga a
+  escribir más.
+- **Los hilos**: pasar de 1 → 2 sube los tokens/s ~55-70 % en esta CPU (en
+  Codespaces se midió ~25-30 %, ver abajo).
+- **El tamaño del modelo**: el 3B va a ~la mitad de tokens/s, tarda el doble en
+  dar el primer token y usa casi el doble de RAM.
+
+### Barrido anterior (hilos × contexto), validado en Codespaces
+
+Comando usado antes de cambiar el ejercicio:
 
 ```bash
 python examples/04_benchmark.py --model-path models/qwen2.5-1.5b-instruct-q4_k_m.gguf models/qwen2.5-3b-instruct-q4_k_m.gguf --n-threads 1 2 --n-ctx 512 2048 --max-tokens 64 --output benchmark_results.csv
@@ -106,10 +141,6 @@ Observaciones para la discusión en clase:
   sistema de archivos (*cold cache*) en la primera lectura. Es un buen momento
   para explicar por qué los benchmarks deberían descartar la primera ejecución
   o "calentar" la caché.
-
-> **Nota:** los prompts por defecto de los scripts están en español; los números
-> de estas tablas se midieron con el prompt original en inglés, así que tus
-> resultados pueden variar ligeramente.
 
 ## Fase 4: challenge (soluciones de referencia)
 

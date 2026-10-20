@@ -1,14 +1,12 @@
 # Fase 3: ejercicio de benchmarking
 
 [examples/04_benchmark.py](04_benchmark.py) recorre combinaciones de cantidad
-de hilos, tamaños de contexto, máximo de tokens generados y archivos de
-modelo, y escribe una fila de CSV
-por cada combinación. Los estudiantes pueden analizar los compromisos
+de hilos, máximo de tokens de salida y archivos de modelo, y escribe una fila
+de CSV por cada combinación. Los estudiantes pueden analizar los compromisos
 (*trade-offs*) variando:
 
 - **Cantidad de hilos** — `--n-threads`
-- **Tamaños de contexto** — `--n-ctx`
-- **Máximo de tokens generados** — `--max-tokens` (p. ej. `--max-tokens 32 128`
+- **Máximo de tokens de salida** — `--max-tokens` (p. ej. `--max-tokens 16 64`
   para ver cómo crece el tiempo total con la longitud de la respuesta)
 - **Niveles de cuantización / tamaños de modelo** — pasa varios valores en
   `--model-path` (p. ej. un GGUF Q4_K_M y uno Q5_K_M/Q8_0, o los modelos de
@@ -17,7 +15,7 @@ por cada combinación. Los estudiantes pueden analizar los compromisos
 ## Ejecutar un barrido
 
 ```bash
-uv run python examples/04_benchmark.py --model-path models/qwen2.5-1.5b-instruct-q4_k_m.gguf models/qwen2.5-3b-instruct-q4_k_m.gguf --n-threads 1 2 --n-ctx 512 2048 --max-tokens 64 --output benchmark_results.csv
+uv run python examples/04_benchmark.py --model-path models/qwen2.5-1.5b-instruct-q4_k_m.gguf models/qwen2.5-3b-instruct-q4_k_m.gguf --n-threads 1 2 --max-tokens 16 64 --output benchmark_results.csv
 ```
 
 Cada combinación se ejecuta una vez por defecto; usa `--repeats 3` para
@@ -34,7 +32,7 @@ taller.
 |---------|-------------|
 | `model` | Archivo GGUF usado |
 | `n_threads` | Hilos de CPU |
-| `n_ctx` | Tamaño de la ventana de contexto |
+| `n_ctx` | Tamaño de la ventana de contexto (2048 en este ejercicio) |
 | `max_tokens` | Máximo de tokens que se permitió generar |
 | `load_time_s` | Tiempo de carga del modelo (s) |
 | `first_token_latency_s` | Latencia hasta el primer token (s) |
@@ -50,8 +48,6 @@ taller.
 - ¿Qué cambia más con el tamaño del modelo: la latencia o la RAM?
 - Si limitas `--max-tokens`, ¿qué cambia: el tiempo total, la latencia del
   primer token o los tokens/s?
-- ¿Cambia algo usar un contexto de 512 o de 2048 tokens? ¿En qué situaciones
-  esperarías que sí importara?
 - ¿Por qué la primera ejecución puede tardar más en cargar el modelo que las
   siguientes? ¿Qué implica eso al medir rendimiento?
 - Si tuvieras que responder en menos de 3 segundos, ¿qué configuración
