@@ -20,7 +20,7 @@ El taller está diseñado para poder completarse incluso si algunos servicios ex
 
 Si alguna dependencia online falla, descarga los recursos necesarios desde:
 
-**[URL_CARPETA_COMPARTIDA]**
+**[uva_workshop](https://1drv.ms/f/c/e6bd4868d36ad37f/IgD8_0Eh2E0eRK1lFuPIqqDwAUEecy6flg-QuRqjUFynybQ?e=E0p4il)**
 
 La carpeta compartida contiene:
 
@@ -114,9 +114,7 @@ code.zip
 
 desde:
 
-```text
-[URL_CARPETA_COMPARTIDA]
-```
+[uva_workshop](https://1drv.ms/f/c/e6bd4868d36ad37f/IgD8_0Eh2E0eRK1lFuPIqqDwAUEecy6flg-QuRqjUFynybQ?e=E0p4il)
 
 Extraer el contenido y continuar.
 
@@ -186,9 +184,7 @@ models.zip
 
 desde:
 
-```text
-[URL_CARPETA_COMPARTIDA]
-```
+[uva_workshop](https://1drv.ms/f/c/e6bd4868d36ad37f/IgD8_0Eh2E0eRK1lFuPIqqDwAUEecy6flg-QuRqjUFynybQ?e=E0p4il)
 
 Extraer el modelo y continuar.
 
